@@ -1,21 +1,19 @@
 #!/bin/bash
-# Build and deploy Voxbar.app to /Applications using py2app
+# Install and launch Voxbar as a LaunchAgent (auto-starts at login)
 set -e
 
 VOXBAR_DIR="$(cd "$(dirname "$0")" && pwd)"
-cd "$VOXBAR_DIR"
+PLIST_NAME="com.voxbar.agent"
+PLIST_SRC="$VOXBAR_DIR/$PLIST_NAME.plist"
+PLIST_DST="$HOME/Library/LaunchAgents/$PLIST_NAME.plist"
 
-echo "Building Voxbar with py2app..."
-rm -rf build dist
-python3 setup.py py2app 2>&1 | tail -5
+# Stop existing instance
+launchctl bootout "gui/$(id -u)/$PLIST_NAME" 2>/dev/null || true
+killall -9 Python 2>/dev/null && sleep 1 || true
 
-echo "Deploying to /Applications..."
-killall -9 Voxbar 2>/dev/null || true
-sleep 1
-rm -rf /Applications/Voxbar.app
-cp -R dist/Voxbar.app /Applications/Voxbar.app
-xattr -cr /Applications/Voxbar.app 2>/dev/null || true
+# Install LaunchAgent
+cp "$PLIST_SRC" "$PLIST_DST"
 
-echo "Launching..."
-open /Applications/Voxbar.app
-echo "Done."
+# Start
+launchctl bootstrap "gui/$(id -u)" "$PLIST_DST"
+echo "Voxbar installed and running. Will auto-start at login."
