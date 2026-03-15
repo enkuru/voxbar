@@ -4,7 +4,7 @@ class Voxbar < Formula
   desc "macOS menu bar voice chat app with Fn hotkey for hands-free dictation"
   homepage "https://github.com/enkuru/voxbar"
   url "https://github.com/enkuru/voxbar/archive/refs/tags/v1.0.0.tar.gz"
-  sha256 "REPLACE_WITH_SHA256"
+  sha256 "77902a05bd7c92679d34131c8d7c058bd2b4c3c0d3997933d9207d0a04e5720c"
   license "MIT"
 
   depends_on "python@3.13"
