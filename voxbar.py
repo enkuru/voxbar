@@ -813,23 +813,10 @@ class VoxbarApp(NSObject):
         config["launch_at_login"] = enabled
         save_config(config)
 
-        if enabled:
-            plist = """<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>Label</key><string>com.voxbar.agent</string>
-    <key>ProgramArguments</key>
-    <array>
-        <string>/usr/bin/open</string>
-        <string>/Applications/Voxbar.app</string>
-    </array>
-    <key>RunAtLoad</key><true/>
-    <key>KeepAlive</key><false/>
-</dict>
-</plist>"""
+        src_plist = SCRIPT_DIR / "com.voxbar.agent.plist"
+        if enabled and src_plist.exists():
             PLIST_PATH.parent.mkdir(parents=True, exist_ok=True)
-            PLIST_PATH.write_text(plist)
+            PLIST_PATH.write_text(src_plist.read_text())
         else:
             PLIST_PATH.unlink(missing_ok=True)
 
