@@ -161,6 +161,8 @@ def _get_terminal_tail() -> str:
             ],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=3,
         )
         return result.stdout[-500:] if result.stdout else ""
@@ -394,7 +396,7 @@ class VoxbarApp(NSObject):
         )
 
         html_path = SCRIPT_DIR / "call_ui.html"
-        html_content = html_path.read_text()
+        html_content = html_path.read_text(encoding="utf-8")
         base_url = NSURL.fileURLWithPath_(str(SCRIPT_DIR))
         self._webview.loadHTMLString_baseURL_(html_content, base_url)
 

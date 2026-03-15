@@ -13,17 +13,15 @@ OPTIONS = {
         "CFBundleIdentifier": "com.voxbar.app",
         "CFBundleVersion": "1.0.0",
         "CFBundleShortVersionString": "1.0",
-        "LSUIElement": True,  # No dock icon
+        "CFBundleIconFile": "AppIcon",
+        "LSUIElement": True,
+        "NSSupportsAutomaticTermination": False,
+        "NSSupportsSuddenTermination": False,
         "NSMicrophoneUsageDescription": "Voxbar needs microphone access for voice dictation.",
     },
+    "iconfile": "Voxbar.app/Contents/Resources/AppIcon.icns",
     "packages": ["objc", "AppKit", "Foundation", "WebKit", "Quartz"],
-    "includes": [
-        "objc",
-        "AppKit",
-        "Foundation",
-        "WebKit",
-        "Quartz",
-    ],
+    "excludes": ["unittest", "test"],
 }
 
 setup(
