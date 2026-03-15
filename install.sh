@@ -1,5 +1,5 @@
 #!/bin/bash
-# Install and launch Voxbar as a LaunchAgent (auto-starts at login)
+# Install Voxbar and start it as a LaunchAgent (auto-starts at login)
 set -e
 
 VOXBAR_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -7,6 +7,22 @@ PLIST_NAME="com.voxbar.agent"
 PLIST_DST="$HOME/Library/LaunchAgents/$PLIST_NAME.plist"
 PYTHON="$(which python3)"
 SCRIPT="$VOXBAR_DIR/voxbar.py"
+
+# Check dependencies
+if ! command -v python3 &>/dev/null; then
+    echo "Error: python3 not found. Install Python 3.12+ first."
+    exit 1
+fi
+
+if ! command -v cliclick &>/dev/null; then
+    echo "Error: cliclick not found. Install with: brew install cliclick"
+    exit 1
+fi
+
+if ! python3 -c "import objc" &>/dev/null; then
+    echo "Installing Python dependencies..."
+    pip3 install -r "$VOXBAR_DIR/requirements.txt"
+fi
 
 # Stop existing instance
 launchctl bootout "gui/$(id -u)/$PLIST_NAME" 2>/dev/null || true
@@ -18,7 +34,7 @@ if [ ! -f "$VOXBAR_DIR/config.json" ]; then
     echo "Created config.json from example."
 fi
 
-# Generate LaunchAgent plist with correct paths
+# Generate LaunchAgent plist
 mkdir -p "$(dirname "$PLIST_DST")"
 cat > "$PLIST_DST" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -46,4 +62,9 @@ PLIST
 
 # Start
 launchctl bootstrap "gui/$(id -u)" "$PLIST_DST"
-echo "Voxbar installed and running. Will auto-start at login."
+echo ""
+echo "Voxbar installed and running!"
+echo "It will auto-start at login."
+echo ""
+echo "Grant Accessibility permissions to python3 and cliclick in:"
+echo "  System Settings → Privacy & Security → Accessibility"

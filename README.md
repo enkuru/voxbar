@@ -23,18 +23,17 @@ macOS menu bar app for hands-free voice dictation via [Wispr](https://wispr.com)
 ## Install
 
 ```bash
+brew install cliclick
 git clone https://github.com/enkuru/voxbar.git
 cd voxbar
-brew install cliclick
-pip3 install -r requirements.txt
-./build.sh
+./install.sh
 ```
 
-To uninstall:
+## Uninstall
 
 ```bash
-launchctl bootout gui/$(id -u)/com.voxbar.agent
-rm ~/Library/LaunchAgents/com.voxbar.agent.plist
+cd voxbar
+./uninstall.sh
 ```
 
 ## Permissions
