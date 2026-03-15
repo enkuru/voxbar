@@ -22,22 +22,19 @@ macOS menu bar app for hands-free voice dictation via [Wispr](https://wispr.com)
 
 ## Install
 
-### Homebrew (recommended)
-
-```bash
-brew tap enkuru/voxbar
-brew install voxbar
-brew services start voxbar
-```
-
-### Manual
-
 ```bash
 git clone https://github.com/enkuru/voxbar.git
 cd voxbar
-pip3 install -r requirements.txt
 brew install cliclick
+pip3 install -r requirements.txt
 ./build.sh
+```
+
+To uninstall:
+
+```bash
+launchctl bootout gui/$(id -u)/com.voxbar.agent
+rm ~/Library/LaunchAgents/com.voxbar.agent.plist
 ```
 
 ## Permissions
