@@ -2,8 +2,8 @@ class Voxbar < Formula
   include Language::Python::Virtualenv
 
   desc "macOS menu bar voice chat app with Fn hotkey for hands-free dictation"
-  homepage "https://github.com/YOUR_GITHUB_USER/voxbar"
-  url "https://github.com/YOUR_GITHUB_USER/voxbar/archive/refs/tags/v1.0.0.tar.gz"
+  homepage "https://github.com/enkuru/voxbar"
+  url "https://github.com/enkuru/voxbar/archive/refs/tags/v1.0.0.tar.gz"
   sha256 "REPLACE_WITH_SHA256"
   license "MIT"
 

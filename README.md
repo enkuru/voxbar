@@ -25,7 +25,7 @@ macOS menu bar app for hands-free voice dictation via [Wispr](https://wispr.com)
 ### Homebrew (recommended)
 
 ```bash
-brew tap YOUR_GITHUB_USER/voxbar
+brew tap enkuru/voxbar
 brew install voxbar
 brew services start voxbar
 ```
@@ -33,7 +33,7 @@ brew services start voxbar
 ### Manual
 
 ```bash
-git clone https://github.com/YOUR_GITHUB_USER/voxbar.git
+git clone https://github.com/enkuru/voxbar.git
 cd voxbar
 pip3 install -r requirements.txt
 brew install cliclick
