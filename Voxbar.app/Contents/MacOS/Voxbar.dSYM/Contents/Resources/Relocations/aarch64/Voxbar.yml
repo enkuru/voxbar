@@ -1,5 +1,0 @@
----
-triple:          'arm64-apple-darwin'
-binary-path:     '/Users/enes/claude-playground/voxbar/Voxbar.app/Contents/MacOS/Voxbar'
-relocations:     []
-...

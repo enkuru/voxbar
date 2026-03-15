@@ -5,3 +5,6 @@ dist/
 build/
 *.egg-info/
 .eggs/
+.DS_Store
+Voxbar.app/
+config.json
