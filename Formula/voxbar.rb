@@ -32,6 +32,9 @@ class Voxbar < Formula
   end
 
   def install
+    # pyobjc uses deprecated macOS APIs that error on newer SDKs
+    ENV.append "CFLAGS", "-Wno-error=unavailable-declarations"
+
     venv = virtualenv_create(libexec, "python3.13")
     venv.pip_install resources
 
