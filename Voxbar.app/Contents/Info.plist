@@ -12,5 +12,8 @@
     <key>CFBundlePackageType</key><string>APPL</string>
     <key>NSMicrophoneUsageDescription</key><string>Voxbar needs microphone access for voice dictation.</string>
     <key>LSMinimumSystemVersion</key><string>12.0</string>
+    <key>LSUIElement</key><true/>
+    <key>NSSupportsAutomaticTermination</key><false/>
+    <key>NSSupportsSuddenTermination</key><false/>
 </dict>
 </plist>

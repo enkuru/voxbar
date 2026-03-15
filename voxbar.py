@@ -839,7 +839,7 @@ def main() -> None:
     global _voxbar_ref
     app = NSApplication.sharedApplication()
     # Accessory policy: no dock icon but allows status bar + popover UI
-    app.setActivationPolicy_(2)  # NSApplicationActivationPolicyAccessory
+    app.setActivationPolicy_(1)  # NSApplicationActivationPolicyAccessory
 
     _voxbar_ref = VoxbarApp.alloc().init()
 
