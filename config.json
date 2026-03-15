@@ -1,0 +1,13 @@
+{
+  "target_app": "iTerm2",
+  "wispr": {
+    "cliclick_handsfree": "kd:fn,cmd ku:fn,cmd"
+  },
+  "ring_sound": "/System/Library/Sounds/Ping.aiff",
+  "ring_interval": 2,
+  "auto_enter": true,
+  "fn_hotkey_enabled": true,
+  "double_tap_ms": 400,
+  "sounds_enabled": true,
+  "launch_at_login": true
+}
