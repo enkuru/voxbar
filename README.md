@@ -41,7 +41,7 @@ rm ~/Library/LaunchAgents/com.voxbar.agent.plist
 
 Voxbar needs these macOS permissions (System Settings → Privacy & Security):
 
-- **Accessibility** — for the Fn hotkey and key simulation
+- **Accessibility** — add both `python3` (at `/Library/Frameworks/Python.framework/Versions/3.13/bin/python3`) and `cliclick` for the Fn hotkey and key simulation
 - **Automation → iTerm2** — for reading terminal content and sending Enter
 
 ## Configuration
