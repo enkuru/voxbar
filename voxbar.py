@@ -7,8 +7,10 @@ Features:
 """
 
 import json
+import logging
 import os
 import random
+import shutil
 import subprocess
 import sys
 import threading
@@ -20,7 +22,7 @@ import objc
 from AppKit import (
     NSApplication,
     NSApplicationActivateIgnoringOtherApps,
-    NSApplicationActivationPolicyProhibited,
+    NSApplicationActivationPolicyAccessory,
     NSAttributedString,
     NSBezierPath,
     NSColor,
@@ -63,12 +65,22 @@ from objc import protocolNamed
 from WebKit import WKUserContentController, WKWebView, WKWebViewConfiguration
 
 # ---------------------------------------------------------------------------
+# Logging
+# ---------------------------------------------------------------------------
+log = logging.getLogger("voxbar")
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%H:%M:%S",
+)
+
+# ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
 SCRIPT_DIR = Path(__file__).parent
-CONFIG_PATH = SCRIPT_DIR / "config.json"
-SIGNAL_PATH = Path.home() / "claude-playground" / "voice-copilot" / ".call_signal"
-CLICLICK = "/opt/homebrew/bin/cliclick"
+CONFIG_PATH = Path(os.environ.get("VOXBAR_CONFIG", str(SCRIPT_DIR / "config.json")))
+SIGNAL_PATH = SCRIPT_DIR / ".call_signal"
+CLICLICK = shutil.which("cliclick") or "/opt/homebrew/bin/cliclick"
 PLIST_PATH = Path.home() / "Library" / "LaunchAgents" / "com.voxbar.agent.plist"
 
 FN_KEY_MASK = 0x800000
@@ -96,19 +108,51 @@ SOUNDS = {
     "cancel": "/System/Library/Sounds/Basso.aiff",
 }
 
+DEFAULT_CONFIG = {
+    "target_app": "iTerm2",
+    "wispr": {"cliclick_handsfree": "kd:fn,cmd ku:fn,cmd"},
+    "ring_sound": "/System/Library/Sounds/Ping.aiff",
+    "ring_interval": 2,
+    "auto_enter": True,
+    "fn_hotkey_enabled": True,
+    "double_tap_ms": 400,
+    "sounds_enabled": True,
+    "launch_at_login": False,
+}
+
 
 # ---------------------------------------------------------------------------
 # Config helpers
 # ---------------------------------------------------------------------------
 def get_config() -> dict:
-    with open(CONFIG_PATH) as f:
-        return json.load(f)
+    try:
+        with open(CONFIG_PATH) as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError, OSError) as e:
+        log.warning("Config load failed (%s), using defaults", e)
+        return dict(DEFAULT_CONFIG)
 
 
 def save_config(config: dict) -> None:
-    with open(CONFIG_PATH, "w") as f:
-        json.dump(config, f, indent=2)
-        f.write("\n")
+    try:
+        with open(CONFIG_PATH, "w") as f:
+            json.dump(config, f, indent=2)
+            f.write("\n")
+    except OSError as e:
+        log.error("Config save failed: %s", e)
+
+
+def _ensure_config() -> None:
+    """Copy config.example.json on first run if config.json is missing."""
+    if CONFIG_PATH.exists():
+        return
+    example = SCRIPT_DIR / "config.example.json"
+    if example.exists():
+        CONFIG_PATH.write_text(example.read_text())
+        log.info("Created %s from example", CONFIG_PATH)
+    else:
+        save_config(dict(DEFAULT_CONFIG))
+        log.info("Created %s with defaults", CONFIG_PATH)
 
 
 # ---------------------------------------------------------------------------
@@ -129,7 +173,7 @@ def focus_terminal() -> None:
                 a.activateWithOptions_(NSApplicationActivateIgnoringOtherApps)
                 return
     except Exception:
-        pass
+        log.warning("Failed to focus %s via NSWorkspace, trying osascript", app_name)
     subprocess.run(
         ["osascript", "-e", f'tell application "{app_name}" to activate'],
         check=False,
@@ -269,6 +313,7 @@ class VoxbarApp(NSObject):
         self._setup_fn_monitor()
         self._setup_escape_tap()
 
+        log.info("Voxbar initialized")
         return self
 
     # ------------------------------------------------------------------
@@ -529,8 +574,8 @@ class VoxbarApp(NSObject):
                     NSFlagsChangedMask, fn_handler
                 )
             )
-        except Exception:
-            pass  # Accessibility permission not granted
+        except Exception as e:
+            log.warning("Fn monitor setup failed (Accessibility?): %s", e)
 
     # ------------------------------------------------------------------
     # Escape key tap (low-level CGEventTap, catches before Wispr)
@@ -560,8 +605,8 @@ class VoxbarApp(NSObject):
                 CGEventTapEnable(tap, True)
                 self._escape_tap = tap
                 self._escape_source = source
-        except Exception:
-            pass  # Accessibility permission not granted
+        except Exception as e:
+            log.warning("Escape tap setup failed (Accessibility?): %s", e)
 
     @objc.typedSelector(b"v@:@")
     def fnStartCall_(self, _=None) -> None:
@@ -631,6 +676,7 @@ class VoxbarApp(NSObject):
         self._start_inline_timer()
         self._play_sound("start")
         self._status_item.button().setToolTip_("Voxbar — Listening")
+        log.info("Call started")
 
         def activate():
             focus_terminal()
@@ -658,6 +704,7 @@ class VoxbarApp(NSObject):
         self._play_sound("end")
         self._status_item.button().setToolTip_("Voxbar — Processing")
         self._popover.close()
+        log.info("Call ended")
 
         def process():
             time.sleep(PROCESS_STEP_DELAY)
@@ -696,6 +743,7 @@ class VoxbarApp(NSObject):
         self._status_item.button().setToolTip_("Voxbar — Ready")
         self._popover.close()
         self.eval_js("setCallState('idle')")
+        log.info("Call cancelled")
 
         def process():
             time.sleep(PROCESS_STEP_DELAY)
@@ -813,12 +861,40 @@ class VoxbarApp(NSObject):
         config["launch_at_login"] = enabled
         save_config(config)
 
-        src_plist = SCRIPT_DIR / "com.voxbar.agent.plist"
-        if enabled and src_plist.exists():
-            PLIST_PATH.parent.mkdir(parents=True, exist_ok=True)
-            PLIST_PATH.write_text(src_plist.read_text())
+        if enabled:
+            self._install_launch_agent()
         else:
             PLIST_PATH.unlink(missing_ok=True)
+
+    def _install_launch_agent(self) -> None:
+        """Generate LaunchAgent plist with correct paths for this machine."""
+        python_path = sys.executable
+        script_path = str(Path(__file__).resolve())
+        working_dir = str(Path(__file__).resolve().parent)
+        plist = f"""<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.voxbar.agent</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>{python_path}</string>
+        <string>{script_path}</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>{working_dir}</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <false/>
+    <key>StandardErrorPath</key>
+    <string>/tmp/voxbar.err.log</string>
+</dict>
+</plist>"""
+        PLIST_PATH.parent.mkdir(parents=True, exist_ok=True)
+        PLIST_PATH.write_text(plist)
+        log.info("Installed LaunchAgent to %s", PLIST_PATH)
 
 
 _voxbar_ref = None
@@ -826,9 +902,10 @@ _voxbar_ref = None
 
 def main() -> None:
     global _voxbar_ref
+    _ensure_config()
+
     app = NSApplication.sharedApplication()
-    # Accessory policy: no dock icon but allows status bar + popover UI
-    app.setActivationPolicy_(1)  # NSApplicationActivationPolicyAccessory
+    app.setActivationPolicy_(NSApplicationActivationPolicyAccessory)
 
     _voxbar_ref = VoxbarApp.alloc().init()
 

@@ -8,3 +8,4 @@ build/
 .DS_Store
 Voxbar.app/
 config.json
+com.voxbar.agent.plist
