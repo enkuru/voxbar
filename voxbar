@@ -77,18 +77,18 @@ cmd_help() {
     echo "Usage: voxbar <command>"
     echo ""
     echo "Commands:"
-    echo "  start     Start Voxbar"
-    echo "  stop      Stop Voxbar"
-    echo "  restart   Restart Voxbar"
-    echo "  status    Show running status"
-    echo "  help      Show this help"
+    echo "  start,   -s     Start Voxbar"
+    echo "  stop,    -x     Stop Voxbar"
+    echo "  restart, -r     Restart Voxbar"
+    echo "  status,  -t     Show running status"
+    echo "  help,    -h     Show this help"
 }
 
 case "${1:-help}" in
-    start)   cmd_start ;;
-    stop)    cmd_stop ;;
-    restart) cmd_restart ;;
-    status)  cmd_status ;;
+    start|-s)    cmd_start ;;
+    stop|-x)     cmd_stop ;;
+    restart|-r)  cmd_restart ;;
+    status|-t)   cmd_status ;;
     help|-h|--help) cmd_help ;;
     *)
         echo "Unknown command: $1"
