@@ -9,8 +9,9 @@ echo "Stopping Voxbar..."
 launchctl bootout "gui/$(id -u)/$PLIST_NAME" 2>/dev/null || true
 pkill -f "python.*voxbar.py" 2>/dev/null || true
 
-echo "Removing LaunchAgent..."
+echo "Removing LaunchAgent and CLI..."
 rm -f "$PLIST_DST"
+rm -f $HOME/.local/bin/voxbar
 
 echo "Voxbar uninstalled."
 echo "To remove the source files: rm -rf $(cd "$(dirname "$0")" && pwd)"

@@ -29,6 +29,15 @@ cd voxbar
 ./install.sh
 ```
 
+After install, the `voxbar` command is available globally:
+
+```bash
+voxbar start     # Start Voxbar
+voxbar stop      # Stop Voxbar
+voxbar restart   # Restart Voxbar
+voxbar status    # Show running status
+```
+
 ## Uninstall
 
 ```bash

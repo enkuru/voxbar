@@ -60,11 +60,17 @@ cat > "$PLIST_DST" <<PLIST
 </plist>
 PLIST
 
+# Install CLI globally
+mkdir -p "$HOME/.local/bin"
+ln -sf "$VOXBAR_DIR/voxbar" "$HOME/.local/bin/voxbar"
+
 # Start
 launchctl bootstrap "gui/$(id -u)" "$PLIST_DST"
 echo ""
 echo "Voxbar installed and running!"
 echo "It will auto-start at login."
+echo ""
+echo "Commands: voxbar start | stop | restart | status"
 echo ""
 echo "Grant Accessibility permissions to python3 and cliclick in:"
 echo "  System Settings → Privacy & Security → Accessibility"

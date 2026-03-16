@@ -1,0 +1,98 @@
+#!/bin/bash
+# Voxbar CLI — manage the Voxbar menu bar app
+set -e
+
+VOXBAR_DIR="$(cd "$(dirname "$(readlink -f "$0" 2>/dev/null || python3 -c "import os; print(os.path.realpath('$0'))")")" && pwd)"
+PLIST_NAME="com.voxbar.agent"
+PLIST_DST="$HOME/Library/LaunchAgents/$PLIST_NAME.plist"
+PYTHON="$(which python3)"
+SCRIPT="$VOXBAR_DIR/voxbar.py"
+
+_is_running() {
+    pgrep -if "python.*voxbar\.py" >/dev/null 2>&1
+}
+
+_pid() {
+    pgrep -if "python.*voxbar\.py" 2>/dev/null | head -1
+}
+
+cmd_start() {
+    if _is_running; then
+        echo "Voxbar is already running (PID $(_pid))."
+        return
+    fi
+
+    # Ensure config exists
+    if [ ! -f "$VOXBAR_DIR/config.json" ]; then
+        cp "$VOXBAR_DIR/config.example.json" "$VOXBAR_DIR/config.json"
+    fi
+
+    # Try LaunchAgent first, fall back to direct
+    if [ -f "$PLIST_DST" ]; then
+        launchctl bootstrap "gui/$(id -u)" "$PLIST_DST" 2>/dev/null || \
+            "$PYTHON" "$SCRIPT" &
+    else
+        "$PYTHON" "$SCRIPT" &
+    fi
+    sleep 1
+    if _is_running; then
+        echo "Voxbar started (PID $(_pid))."
+    else
+        echo "Failed to start Voxbar. Check /tmp/voxbar.err.log"
+        exit 1
+    fi
+}
+
+cmd_stop() {
+    if ! _is_running; then
+        echo "Voxbar is not running."
+        return
+    fi
+    launchctl bootout "gui/$(id -u)/$PLIST_NAME" 2>/dev/null || true
+    pkill -if "python.*voxbar\.py" 2>/dev/null || true
+    sleep 1
+    echo "Voxbar stopped."
+}
+
+cmd_restart() {
+    cmd_stop
+    cmd_start
+}
+
+cmd_status() {
+    if _is_running; then
+        echo "Voxbar is running (PID $(_pid))."
+    else
+        echo "Voxbar is not running."
+    fi
+
+    if [ -f "$PLIST_DST" ]; then
+        echo "Launch at login: enabled"
+    else
+        echo "Launch at login: disabled"
+    fi
+}
+
+cmd_help() {
+    echo "Usage: voxbar <command>"
+    echo ""
+    echo "Commands:"
+    echo "  start     Start Voxbar"
+    echo "  stop      Stop Voxbar"
+    echo "  restart   Restart Voxbar"
+    echo "  status    Show running status"
+    echo "  help      Show this help"
+}
+
+case "${1:-help}" in
+    start)   cmd_start ;;
+    stop)    cmd_stop ;;
+    restart) cmd_restart ;;
+    status)  cmd_status ;;
+    help|-h|--help) cmd_help ;;
+    *)
+        echo "Unknown command: $1"
+        cmd_help
+        exit 1
+        ;;
+esac
