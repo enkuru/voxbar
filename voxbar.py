@@ -496,10 +496,6 @@ class VoxbarApp(NSObject):
     # ------------------------------------------------------------------
     def _setup_fn_monitor(self) -> None:
         try:
-            config = get_config()
-            if not config.get("fn_hotkey_enabled", True):
-                return
-
             def key_handler(event):
                 if self._fn_is_down:
                     self._fn_other_key_pressed = True
@@ -512,6 +508,8 @@ class VoxbarApp(NSObject):
 
             def fn_handler(event):
                 if self._fn_suppressed:
+                    return
+                if not get_config().get("fn_hotkey_enabled", True):
                     return
                 flags = event.modifierFlags()
                 fn_down = bool(flags & FN_KEY_MASK)
